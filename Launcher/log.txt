@@ -1,0 +1,13 @@
+2024-12-11T01:01:44.3578000Z TRACE:: Engine.Main(): LEAN ALGORITHMIC TRADING ENGINE v2.5.0.0 Mode: DEBUG (64bit) Host: Aneels-MacBook-Pro
+2024-12-11T01:01:44.3972580Z TRACE:: Engine.Main(): Started 8:01PM
+2024-12-11T01:01:44.4337940Z TRACE:: Config.Get(): Configuration key not found. Key: lean-manager-type - Using default value: LocalLeanManager
+2024-12-11T01:01:44.4481000Z TRACE:: JobQueue.NextJob(): Selected QuantConnect.Algorithm.CSharp.dll
+2024-12-11T01:01:44.7171360Z TRACE:: Config.GetValue(): scheduled-event-leaky-bucket-capacity - Using default value: 120
+2024-12-11T01:01:44.7173470Z TRACE:: Config.GetValue(): scheduled-event-leaky-bucket-time-interval-minutes - Using default value: 1440
+2024-12-11T01:01:44.7174040Z TRACE:: Config.GetValue(): scheduled-event-leaky-bucket-refill-amount - Using default value: 18
+2024-12-11T01:01:44.7183840Z TRACE:: Config.GetValue(): storage-limit - Using default value: 10737418240
+2024-12-11T01:01:44.7185260Z TRACE:: Config.GetValue(): storage-file-count - Using default value: 10000
+2024-12-11T01:01:44.7185640Z TRACE:: Config.GetValue(): storage-permissions - Using default value: 3
+2024-12-11T01:01:44.7186670Z TRACE:: Config.Get(): Configuration key not found. Key: algorithm-id - Using default value: BasicTemplateFrameworkAlgorithm
+2024-12-11T01:01:44.7188460Z TRACE:: Config.Get(): Configuration key not found. Key: optimization-id - Using default value: 
+2024-12-11T01:01:44.7188880Z TRACE:: Config.Get(): Configuration key not found. Key: backtest-name - Using default value: local

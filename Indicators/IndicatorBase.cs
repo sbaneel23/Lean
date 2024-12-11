@@ -134,266 +134,85 @@ namespace QuantConnect.Indicators
         /// If index is greater or equal than the current count, it returns null.
         /// If the index is greater or equal than the window size, it returns null and resizes the windows to i + 1.
         /// </summary>
-        /// <param name="i">The index</param>
-        /// <returns>the ith most recent indicator value</returns>
-        public IndicatorDataPoint this[int i]
+        /// <param name="index">The index of the value to retrieve (0 = most recent).</param>
+        /// <returns>The value at the specified index.</returns>
+        /// <exception cref="IndexOutOfRangeException">Thrown if the index exceeds the window size.</exception>
+        public IndicatorDataPoint GetHistoricalValue(int index)
         {
-            get
+            if (index >= Window.Count)
             {
-                return Window[i];
+                throw new ArgumentOutOfRangeException(
+                    nameof(index),
+                    $"Index {index} is out of range. The window size is {Window.Count}."
+                );
             }
+
+            return Window[index];
         }
 
         /// <summary>
-        /// Returns an enumerator that iterates through the history window.
+        /// Indexes the history windows, where index 0 is the most recent indicator value.
         /// </summary>
+        public IndicatorDataPoint this[int i] => GetHistoricalValue(i);
+
+        /// <summary>
+        /// Compares the current instance with another object of the same type.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
         /// <returns>
-        /// A <see cref="T:System.Collections.Generic.IEnumerator`1" /> that can be used to iterate through the history window.
+        /// A value that indicates the relative order of the objects being compared:
+        /// Less than zero: This instance is less than <paramref name="obj"/>.
+        /// Zero: This instance is equal to <paramref name="obj"/>.
+        /// Greater than zero: This instance is greater than <paramref name="obj"/>.
         /// </returns>
-        /// <filterpriority>1</filterpriority>
-        public IEnumerator<IndicatorDataPoint> GetEnumerator()
+        /// <exception cref="ArgumentException">Thrown when the provided object is not of the same type.</exception>
+        public int CompareTo(object obj)
         {
-            return Window.GetEnumerator();
+            if (obj is IndicatorBase other)
+            {
+                return CompareTo(other);
+            }
+
+            throw new ArgumentException($"Object must be of type {GetType().Name}");
         }
 
         /// <summary>
-        /// Returns an enumerator that iterates through the history window.
+        /// Compares the current object with another indicator.
         /// </summary>
+        /// <param name="other">The other indicator to compare with.</param>
         /// <returns>
-        /// An <see cref="T:System.Collections.IEnumerator" /> object that can be used to iterate through the history window.
+        /// A value that indicates the relative order of the objects being compared:
+        /// Less than zero: This object is less than <paramref name="other"/>.
+        /// Zero: This object is equal to <paramref name="other"/>.
+        /// Greater than zero: This object is greater than <paramref name="other"/>.
         /// </returns>
-        /// <filterpriority>2</filterpriority>
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-
-        /// <summary>
-        /// ToString Overload for Indicator Base
-        /// </summary>
-        /// <returns>String representation of the indicator</returns>
-        public override string ToString()
-        {
-            return Current.Value.ToStringInvariant("#######0.0####");
-        }
-
-        /// <summary>
-        /// Provides a more detailed string of this indicator in the form of {Name} - {Value}
-        /// </summary>
-        /// <returns>A detailed string of this indicator's current state</returns>
-        public string ToDetailedString()
-        {
-            return $"{Name} - {this}";
-        }
-
-        /// <summary>
-        /// Compares the current object with another object of the same type.
-        /// </summary>
-        /// <returns>
-        /// A value that indicates the relative order of the objects being compared. The return value has the following meanings: Value Meaning Less than zero This object is less than the <paramref name="other"/> parameter.Zero This object is equal to <paramref name="other"/>. Greater than zero This object is greater than <paramref name="other"/>.
-        /// </returns>
-        /// <param name="other">An object to compare with this object.</param>
         public int CompareTo(IIndicator other)
         {
             if (ReferenceEquals(other, null))
             {
-                // everything is greater than null via MSDN
-                return 1;
+                return 1; // Everything is greater than null
             }
 
             return Current.CompareTo(other.Current);
         }
 
         /// <summary>
-        /// Compares the current instance with another object of the same type and returns an integer that indicates whether the current instance precedes, follows, or occurs in the same position in the sort order as the other object.
+        /// Returns an enumerator that iterates through the history window.
         /// </summary>
-        /// <returns>
-        /// A value that indicates the relative order of the objects being compared. The return value has these meanings: Value Meaning Less than zero This instance precedes <paramref name="obj"/> in the sort order. Zero This instance occurs in the same position in the sort order as <paramref name="obj"/>. Greater than zero This instance follows <paramref name="obj"/> in the sort order.
-        /// </returns>
-        /// <param name="obj">An object to compare with this instance. </param><exception cref="T:System.ArgumentException"><paramref name="obj"/> is not the same type as this instance. </exception><filterpriority>2</filterpriority>
-        public int CompareTo(object obj)
-        {
-            var other = obj as IndicatorBase;
-            if (other == null)
-            {
-                throw new ArgumentException("Object must be of type " + GetType().GetBetterTypeName());
-            }
+        public IEnumerator<IndicatorDataPoint> GetEnumerator() => Window.GetEnumerator();
 
-            return CompareTo(other);
-        }
-
-    }
-
-    /// <summary>
-    /// Provides a base type for all indicators
-    /// </summary>
-    /// <typeparam name="T">The type of data input into this indicator</typeparam>
-    [DebuggerDisplay("{ToDetailedString()}")]
-    public abstract class IndicatorBase<T> : IndicatorBase
-        where T : IBaseData
-    {
-        private bool _loggedForwardOnlyIndicatorError;
-
-        /// <summary>the most recent input that was given to this indicator</summary>
-        private Dictionary<SecurityIdentifier, T> _previousInput = new Dictionary<SecurityIdentifier, T>();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         /// <summary>
-        /// Initializes a new instance of the Indicator class using the specified name.
+        /// Returns a string representation of the current indicator value.
         /// </summary>
-        /// <param name="name">The name of this indicator</param>
-        protected IndicatorBase(string name)
-            : base(name)
-        {}
+        /// <returns>A string representation of the current value.</returns>
+        public override string ToString() => Current.Value.ToStringInvariant("#######0.0####");
 
         /// <summary>
-        /// Updates the state of this indicator with the given value and returns true
-        /// if this indicator is ready, false otherwise
+        /// Provides a detailed string representation of the indicator's current state, including its name and value.
         /// </summary>
-        /// <param name="input">The value to use to update this indicator</param>
-        /// <returns>True if this indicator is ready, false otherwise</returns>
-        public override bool Update(IBaseData input)
-        {
-            T _previousSymbolInput = default(T);
-            if (_previousInput.TryGetValue(input.Symbol.ID, out _previousSymbolInput) && input.EndTime < _previousSymbolInput.EndTime)
-            {
-                if (!_loggedForwardOnlyIndicatorError)
-                {
-                    _loggedForwardOnlyIndicatorError = true;
-                    // if we receive a time in the past, log once and return
-                    Log.Error($"IndicatorBase.Update(): This is a forward only indicator: {Name} Input: {input.EndTime:u} Previous: {_previousSymbolInput.EndTime:u}. It will not be updated with this input.");
-                }
-                return IsReady;
-            }
-            if (!ReferenceEquals(input, _previousSymbolInput))
-            {
-                // compute a new value and update our previous time
-                Samples++;
-
-                if (!(input is T))
-                {
-                    throw new ArgumentException($"IndicatorBase.Update() 'input' expected to be of type {typeof(T)} but is of type {input.GetType()}");
-                }
-                _previousInput[input.Symbol.ID] = (T)input;
-
-                var nextResult = ValidateAndComputeNextValue((T)input);
-                if (nextResult.Status == IndicatorStatus.Success)
-                {
-                    Current = new IndicatorDataPoint(input.EndTime, nextResult.Value);
-
-                    // let others know we've produced a new data point
-                    OnUpdated(Current);
-                }
-            }
-            return IsReady;
-        }
-
-        /// <summary>
-        /// Updates the state of this indicator with the given value and returns true
-        /// if this indicator is ready, false otherwise
-        /// </summary>
-        /// <param name="time">The time associated with the value</param>
-        /// <param name="value">The value to use to update this indicator</param>
-        /// <returns>True if this indicator is ready, false otherwise</returns>
-        public bool Update(DateTime time, decimal value)
-        {
-            if (typeof(T) == typeof(IndicatorDataPoint))
-            {
-                return Update((T)(object)new IndicatorDataPoint(time, value));
-            }
-
-            var suggestions = new List<string>
-            {
-                "Update(TradeBar)",
-                "Update(QuoteBar)"
-            };
-
-            if (typeof(T) == typeof(IBaseData))
-            {
-                suggestions.Add("Update(Tick)");
-            }
-
-            throw new NotSupportedException($"{GetType().Name} does not support the `Update(DateTime, decimal)` method. Use one of the following methods instead: {string.Join(", ", suggestions)}");
-        }
-
-        /// <summary>
-        /// Resets this indicator to its initial state
-        /// </summary>
-        public override void Reset()
-        {
-            Samples = 0;
-            _previousInput.Clear();
-            Window.Reset();
-            Current = new IndicatorDataPoint(DateTime.MinValue, default(decimal));
-        }
-
-        /// <summary>
-        /// Computes the next value of this indicator from the given state
-        /// </summary>
-        /// <param name="input">The input given to the indicator</param>
-        /// <returns>A new value for this indicator</returns>
-        protected abstract decimal ComputeNextValue(T input);
-
-        /// <summary>
-        /// Computes the next value of this indicator from the given state
-        /// and returns an instance of the <see cref="IndicatorResult"/> class
-        /// </summary>
-        /// <param name="input">The input given to the indicator</param>
-        /// <returns>An IndicatorResult object including the status of the indicator</returns>
-        protected virtual IndicatorResult ValidateAndComputeNextValue(T input)
-        {
-            // default implementation always returns IndicatorStatus.Success
-            return new IndicatorResult(ComputeNextValue(input));
-        }
-
-        /// <summary>
-        /// Determines whether the specified object is equal to the current object.
-        /// </summary>
-        /// <returns>
-        /// true if the specified object  is equal to the current object; otherwise, false.
-        /// </returns>
-        /// <param name="obj">The object to compare with the current object. </param>
-        public override bool Equals(object obj)
-        {
-            // this implementation acts as a liason to prevent inconsistency between the operators
-            // == and != against primitive types. the core impl for equals between two indicators
-            // is still reference equality, however, when comparing value types (floats/int, ect..)
-            // we'll use value type semantics on Current.Value
-            // because of this, we shouldn't need to override GetHashCode as well since we're still
-            // solely relying on reference semantics (think hashset/dictionary impls)
-
-            if (ReferenceEquals(obj, null)) return false;
-            var type = obj.GetType();
-
-            while (type != null && type != typeof(object))
-            {
-                var cur = type.IsGenericType ? type.GetGenericTypeDefinition() : type;
-                if (typeof(IndicatorBase<>) == cur)
-                {
-                    return ReferenceEquals(this, obj);
-                }
-                type = type.BaseType;
-            }
-
-            try
-            {
-                // the obj is not an indicator, so let's check for value types, try converting to decimal
-                var converted = obj.ConvertInvariant<decimal>();
-                return Current.Value == converted;
-            }
-            catch (InvalidCastException)
-            {
-                // conversion failed, return false
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Get Hash Code for this Object
-        /// </summary>
-        /// <returns>Integer Hash Code</returns>
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
+        /// <returns>A detailed string representation of the indicator's current state.</returns>
+        public string ToDetailedString() => $"{Name} - {this}";
     }
 }

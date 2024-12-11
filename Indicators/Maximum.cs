@@ -23,9 +23,9 @@ namespace QuantConnect.Indicators
     public class Maximum : WindowIndicator<IndicatorDataPoint>, IIndicatorWarmUpPeriodProvider
     {
         /// <summary>
-        /// The number of periods since the maximum value was encountered
+        /// Gets the number of periods since the maximum value was observed.
         /// </summary>
-        public int PeriodsSinceMaximum { get; private set; }
+        public IndicatorDataPoint PeriodsSinceMaximum { get; private set; }
 
         /// <summary>
         /// Gets a flag indicating when this indicator is ready and fully initialized
