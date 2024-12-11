@@ -174,7 +174,7 @@ namespace QuantConnect.Tests.Indicators
             {
                 try
                 {
-                    instantiatedIndicator = Activator.CreateInstance(indicator, new object[] {10});
+                    instantiatedIndicator = Activator.CreateInstance(indicator, new object[] { 10 });
                     counter++;
                 }
                 catch (Exception)
@@ -364,7 +364,7 @@ namespace QuantConnect.Tests.Indicators
         {
             var methodName = "op_" + @operator;
             var method =
-                typeof (IndicatorBase).GetMethods(BindingFlags.Static | BindingFlags.Public)
+                typeof(IndicatorBase).GetMethods(BindingFlags.Static | BindingFlags.Public)
                 .SingleOrDefault(x => x.Name == methodName && x.GetParameters()[argIndex].ParameterType == typeof(T));
 
             if (method == null)
@@ -410,6 +410,81 @@ namespace QuantConnect.Tests.Indicators
             {
                 return input.Value;
             }
+        }
+
+        [Test]
+        public void GetHistoricalValue_ValidIndex_ReturnsCorrectValue()
+        {
+            // Arrange
+            var indicator = new Maximum(5);
+            indicator.Update(new IndicatorDataPoint(DateTime.UtcNow.AddMinutes(-3), 10));
+            indicator.Update(new IndicatorDataPoint(DateTime.UtcNow.AddMinutes(-2), 20));
+            indicator.Update(new IndicatorDataPoint(DateTime.UtcNow.AddMinutes(-1), 30));
+
+            // Act
+            var historicalValue = indicator.GetHistoricalValue(1);
+
+            // Assert
+            Assert.AreEqual(20, historicalValue.Value);
+        }
+
+        [Test]
+        public void GetHistoricalValue_InvalidIndex_ThrowsArgumentOutOfRangeException()
+        {
+            // Arrange
+            var indicator = new Maximum(5);
+            indicator.Update(new IndicatorDataPoint(DateTime.UtcNow, 10));
+
+            // Act & Assert
+            Assert.Throws<ArgumentOutOfRangeException>(() => indicator.GetHistoricalValue(5));
+        }
+
+        [Test]
+        public void PeriodsSinceMaximum_IsIndicatorDataPoint()
+        {
+            // Arrange
+            var indicator = new Maximum(5);
+
+            // Act
+            indicator.Update(new IndicatorDataPoint(DateTime.UtcNow, 100));
+
+            // Assert
+            Assert.IsInstanceOf<IndicatorDataPoint>(indicator.PeriodsSinceMaximum);
+        }
+
+        [Test]
+        public void PeriodsSinceMaximum_ReturnsCorrectValue()
+        {
+            // Arrange
+            var indicator = new Maximum(5);
+            indicator.Update(new IndicatorDataPoint(DateTime.UtcNow.AddMinutes(-3), 10));
+            indicator.Update(new IndicatorDataPoint(DateTime.UtcNow.AddMinutes(-2), 20));
+            indicator.Update(new IndicatorDataPoint(DateTime.UtcNow.AddMinutes(-1), 30));
+
+            // Act
+            var periodsSinceMaximum = indicator.PeriodsSinceMaximum;
+
+            // Assert
+            Assert.AreEqual(0, periodsSinceMaximum.Value); // Most recent update is the maximum
+        }
+
+        [Test]
+        public void RollingWindow_ContainsCorrectNumberOfValues()
+        {
+            // Arrange
+            var indicator = new Maximum(5);
+            indicator.Update(new IndicatorDataPoint(DateTime.UtcNow.AddMinutes(-5), 10));
+            indicator.Update(new IndicatorDataPoint(DateTime.UtcNow.AddMinutes(-4), 20));
+            indicator.Update(new IndicatorDataPoint(DateTime.UtcNow.AddMinutes(-3), 30));
+            indicator.Update(new IndicatorDataPoint(DateTime.UtcNow.AddMinutes(-2), 40));
+            indicator.Update(new IndicatorDataPoint(DateTime.UtcNow.AddMinutes(-1), 50));
+            indicator.Update(new IndicatorDataPoint(DateTime.UtcNow, 60)); // Rolling window size exceeded
+
+            // Act
+            var windowCount = indicator.Window.Count;
+
+            // Assert
+            Assert.AreEqual(5, windowCount);
         }
     }
 }

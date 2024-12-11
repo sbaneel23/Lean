@@ -14,6 +14,7 @@
 */
 
 using System.Linq;
+using QLNet;
 
 namespace QuantConnect.Indicators
 {
@@ -30,7 +31,7 @@ namespace QuantConnect.Indicators
         /// <summary>
         /// Gets a flag indicating when this indicator is ready and fully initialized
         /// </summary>
-        public override bool IsReady => Samples >= Period;
+        public override bool IsReady => Sample >= Period;
 
         /// <summary>
         /// Required period, in data points, for the indicator to be ready and fully initialized.
