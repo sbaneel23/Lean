@@ -17,6 +17,7 @@ using System;
 using NUnit.Framework;
 using QuantConnect.Data.Consolidators;
 using QuantConnect.Data.Market;
+using QuantConnect.Data;
 
 namespace QuantConnect.Tests.Common.Data
 {
@@ -62,11 +63,11 @@ namespace QuantConnect.Tests.Common.Data
             {
                 count++;
             };
-            
-            var tradeBar = new TradeBar{EndTime = reference};
+
+            var tradeBar = new TradeBar { EndTime = reference };
             identity.Update(tradeBar);
 
-            tradeBar = (TradeBar) tradeBar.Clone();
+            tradeBar = (TradeBar)tradeBar.Clone();
             identity.Update(tradeBar);
 
             Assert.AreEqual(1, count);
@@ -91,6 +92,41 @@ namespace QuantConnect.Tests.Common.Data
             identity.Update(tradeBar);
 
             Assert.AreEqual(2, count);
+        }
+
+        [Test]
+        public void TriggersOnDataConsolidatedForFillForwardData()
+        {
+            // Arrange
+            using (var consolidator = new IdentityDataConsolidator<TradeBar>())
+            {
+                // Create a TradeBar instance
+                var fillForwardData = new TradeBar
+                {
+                    Time = DateTime.UtcNow,
+                    EndTime = DateTime.UtcNow.AddMinutes(1),
+                    Value = 100
+                };
+
+                // Use reflection to set the IsFillForward property
+                var property = typeof(BaseData).GetProperty(
+                    nameof(BaseData.IsFillForward),
+                    System.Reflection.BindingFlags.NonPublic |
+                    System.Reflection.BindingFlags.Instance);
+                property.SetValue(fillForwardData, true);
+
+                bool eventTriggered = false;
+
+                // Act
+                consolidator.DataConsolidated += (sender, consolidated) =>
+                {
+                    eventTriggered = true;
+                };
+                consolidator.Update(fillForwardData);
+
+                // Assert
+                Assert.IsTrue(eventTriggered, "DataConsolidated event should trigger for fill-forward data.");
+            }
         }
     }
 }
